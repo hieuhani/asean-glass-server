@@ -1,0 +1,26 @@
+lib-cov
+*.seed
+*.log
+*.dat
+*.out
+*.pid
+*.swp
+
+pids
+logs
+results
+tmp
+
+# Dependency directory
+functions/node_modules
+
+# Configuration files
+functions/service-account-credentials.json
+
+# Editors
+.idea
+.vscode
+
+# OS metadata
+.DS_Store
+Thumbs.db
