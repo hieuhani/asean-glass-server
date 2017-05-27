@@ -1,37 +1,31 @@
 const functions = require('firebase-functions');
 const _ = require('lodash');
-const { responseError } = require('./error-handlers');
 const admin = require('firebase-admin');
+const { sendEmail, EMAIL_TEMPLATES, EMAIL_FROM } = require('./emailer');
+
 
 const serviceAccount = require('./service-account-credentials.json');
-
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: 'https://aseanglass-cf37f.firebaseio.com',
 });
 
-exports.register = functions.https.onRequest((req, res) => {
-    // TODO: Validate JSON schema
-    const { attendees } = req.body;
-    const masterAttendee = _.head(attendees);
-    if (!(masterAttendee && (masterAttendee.email && masterAttendee.password))) {
-        responseError(400, 'Master attendee email and password is required', res);
+exports.newRegistrationEvent = functions.database.ref('/registration_forms/{userID}').onWrite(event => {
+    const data = event.data.val();
+    if (!data) {
+        return Promise.resolve();
     }
-    const account = _.pick(masterAttendee, ['email', 'password', 'phone', 'first_name']);
+    const primaryEmail = _.get(data, 'attendees.0.email');
+    if (primaryEmail) {
+        const mailOptions = {
+            from: EMAIL_FROM,
+            to: primaryEmail,
+            subject: 'Thanks for registering 41st Asean Glass Conference',
+        };
+        mailOptions.template = EMAIL_TEMPLATES.WELCOME_EMAIL;
 
-    return admin.auth().createUser(account).then((userRecord) => {
-        return admin.auth().createCustomToken(userRecord.uid).then((token) => {
-            return Promise.resolve({ uid: userRecord.uid, token });
-        });
-    }).then(({ uid, token }) => {
-        const registrationData = {};
-        registrationData.attendees = attendees;
-        return admin.database().ref(`/registration_forms/${uid}`).push(registrationData).then(() => {
-            res.json({ token });
-        });
-    }).catch((error) => {
-        console.error(error);
-        res.status(400);
-        res.json(error);
-    });
+        return sendEmail(mailOptions);
+    }
+
+    return Promise.resolve();
 });
