@@ -25,8 +25,8 @@ exports.register = functions.https.onRequest((req, res) => {
         });
     }).then(({ uid, token }) => {
         const registrationData = {};
-        registrationData[uid] = attendees;
-        return admin.database().ref('/attendees').push(registrationData).then(() => {
+        registrationData.attendees = attendees;
+        return admin.database().ref(`/registration_forms/${uid}`).push(registrationData).then(() => {
             res.json({ token });
         });
     }).catch((error) => {
