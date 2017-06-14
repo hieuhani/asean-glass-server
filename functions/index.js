@@ -11,6 +11,7 @@ admin.initializeApp({
 });
 
 exports.newRegistrationEvent = functions.database.ref('/registration_forms/{userID}').onWrite(event => {
+    if (event.data.exists()) return;
     const data = event.data.val();
     if (!data) {
         return Promise.resolve();
