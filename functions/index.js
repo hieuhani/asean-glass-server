@@ -11,11 +11,15 @@ admin.initializeApp({
 });
 
 exports.newRegistrationEvent = functions.database.ref('/registration_forms/{userID}').onWrite(event => {
-    if (event.data.exists()) return;
-    const data = event.data.val();
+    const data = event.data.val();    
     if (!data) {
         return Promise.resolve();
     }
+    if (_.has(data, 'status')) {
+        console.log('This registration form is reviewed');
+        return Promise.resolve();
+    }
+    console.log('Send welcome email to this user');
     const primaryEmail = _.get(data, 'attendees.0.email');
     if (primaryEmail) {
         const mailOptions = {
